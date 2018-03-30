@@ -46,8 +46,15 @@ int main( int argc, char ** argv )
     QCGTopLevel* t = new QCGTopLevel();
     t->show();
     if (list.isEmpty()) {
-        // load files in current dir
-        t->loadDelayed( QStringLiteral("."), false);
+        // load recent file
+        ConfigGroup* generalConfig = ConfigStorage::group(QStringLiteral("GeneralSettings"));
+        QStringList recentFiles = generalConfig->value(QStringLiteral("RecentFiles"),
+                                           QStringList()).toStringList();
+        if (recentFiles.size() > 0)
+        {
+            t->loadDelayed( recentFiles[0], false);
+        }
+        delete generalConfig;
     }
     else {
         foreach(const QString& file, list)
