@@ -1,3 +1,13 @@
+Fork Change Notes
+-========================
+* The fork owner does not use KCachegrind. All modifications are made
+to QCachegrind only.
+* Added per-call metrics on function list view. (Incl./Call and Self/Call)
+* Always open the most recently opened prof file if the application is launched with no arguments.
+* Changed default file name filter from callgrind* to *.prof.log.
+* Added script for releasing distributable Windows application.
+
+
 KCachegrind / QCachegrind
 -========================
 
