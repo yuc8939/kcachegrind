@@ -81,8 +81,10 @@ private:
     QString getName(TraceFunction *f) const;
     QPixmap getNamePixmap(TraceFunction  *f) const;
     QString getInclCost(TraceFunction *f) const;
+    QString getInclCostPerCall(TraceFunction *f) const;
     QPixmap getInclPixmap(TraceFunction *f) const;
     QString getSelfCost(TraceFunction *f) const;
+    QString getSelfCostPerCall(TraceFunction *f) const;
     QPixmap getSelfPixmap(TraceFunction *f) const;
     QString getCallCount(TraceFunction *f) const;
     QString getLocation(TraceFunction *f) const;

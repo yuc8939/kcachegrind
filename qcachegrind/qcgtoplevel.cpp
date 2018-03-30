@@ -795,7 +795,7 @@ void QCGTopLevel::load()
     files = QFileDialog::getOpenFileNames(this,
                                           tr("Open Callgrind Data"),
                                           _lastFile,
-                                          tr("Callgrind Files (callgrind.*);;All Files (*)"));
+                                          tr("Callgrind Files (*.prof.log);;All Files (*)"));
     load(files);
 }
 
@@ -844,7 +844,7 @@ void QCGTopLevel::add()
     files = QFileDialog::getOpenFileNames(this,
                                           tr("Add Callgrind Data"),
                                           _lastFile,
-                                          tr("Callgrind Files (callgrind.*);;All Files (*)"));
+                                          tr("Callgrind Files (*.prof.log);;All Files (*)"));
     add(files);
 }
 

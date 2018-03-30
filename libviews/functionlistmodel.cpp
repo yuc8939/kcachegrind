@@ -30,7 +30,9 @@ FunctionListModel::FunctionListModel()
 
     _headerData
             << tr("Incl.")
+            << tr("Incl./Call")
             << tr("Self")
+            << tr("Self/Call")
             << tr("Called")
             << tr("Function")
             << tr("Location");
@@ -43,7 +45,7 @@ FunctionListModel::~FunctionListModel()
 
 int FunctionListModel::columnCount(const QModelIndex& parent) const
 {
-    return (parent.isValid()) ? 0 : 5;
+    return (parent.isValid()) ? 0 : 7;
 }
 
 int FunctionListModel::rowCount(const QModelIndex& parent ) const
@@ -70,7 +72,7 @@ QVariant FunctionListModel::data(const QModelIndex &index, int role) const
     // the skipped items entry
     if ( (_topList.count() < _filteredList.count()) &&
          (index.row() == _topList.count()) ) {
-        if( (role != Qt::DisplayRole) || (index.column() != 3))
+        if( (role != Qt::DisplayRole) || (index.column() != 5))
             return QVariant();
 
         return tr("(%1 function(s) skipped)").arg(_filteredList.count() - _topList.count());
@@ -80,15 +82,15 @@ QVariant FunctionListModel::data(const QModelIndex &index, int role) const
     Q_ASSERT(f != 0);
     switch(role) {
     case Qt::TextAlignmentRole:
-        return (index.column()<3) ? Qt::AlignRight : Qt::AlignLeft;
+        return (index.column()<5) ? Qt::AlignRight : Qt::AlignLeft;
 
     case Qt::DecorationRole:
         switch (index.column()) {
         case 0:
             return getInclPixmap(f);
-        case 1:
+        case 2:
             return getSelfPixmap(f);
-        case 3:
+        case 5:
             return getNamePixmap(f);
         default:
             break;
@@ -100,12 +102,16 @@ QVariant FunctionListModel::data(const QModelIndex &index, int role) const
         case 0:
             return getInclCost(f);
         case 1:
-            return getSelfCost(f);
+            return getInclCostPerCall(f);
         case 2:
-            return getCallCount(f);
+            return getSelfCost(f);
         case 3:
-            return getName(f);
+            return getSelfCostPerCall(f);
         case 4:
+            return getCallCount(f);
+        case 5:
+            return getName(f);
+        case 6:
             return getLocation(f);
         default:
             break;
@@ -369,6 +375,35 @@ QString FunctionListModel::getSelfCost(TraceFunction *f) const
         return f->prettySubCost(_eventType);
 }
 
+QString FunctionListModel::getSelfCostPerCall(TraceFunction *f) const
+{
+    ProfileCostArray* selfCost = f->data();
+    if (GlobalConfig::showExpanded()) {
+        switch(_groupType) {
+        case ProfileContext::Object: selfCost = f->object(); break;
+        case ProfileContext::Class:  selfCost = f->cls(); break;
+        case ProfileContext::File:   selfCost = f->file(); break;
+        default: break;
+        }
+    }
+    double selfTotal = selfCost->subCost(_eventType);
+    if (selfTotal == 0.0)
+        return QStringLiteral("-");
+
+    // self
+    SubCost pure = f->subCost(_eventType);
+    if (f->calledCount() != 0)
+        pure /= f->calledCount();
+    else
+        pure = SubCost(0);
+    double self  = 100.0 * pure / selfTotal;
+    if (GlobalConfig::showPercentage())
+        return QStringLiteral("%1")
+                .arg(self, 0, 'f', GlobalConfig::percentPrecision());
+    else
+        return pure.pretty();
+}
+
 QPixmap FunctionListModel::getSelfPixmap(TraceFunction *f) const
 {
     ProfileCostArray* selfCost = f->data();
@@ -401,6 +436,28 @@ QString FunctionListModel::getInclCost(TraceFunction *f) const
     else
         return f->inclusive()->prettySubCost(_eventType);
 }
+
+QString FunctionListModel::getInclCostPerCall(TraceFunction *f) const
+{
+    double inclTotal = f->data()->subCost(_eventType);
+    if (inclTotal == 0.0)
+        return QStringLiteral("-");
+
+    SubCost sum  = f->inclusive()->subCost(_eventType);
+    SubCost calledCount = f->calledCount();
+    if (calledCount != 0)
+        sum /= calledCount;
+    else
+        sum = SubCost(0);
+    double incl  = 100.0 * sum / inclTotal;
+
+    if (GlobalConfig::showPercentage())
+        return QStringLiteral("%1")
+                .arg(incl, 0, 'f', GlobalConfig::percentPrecision());
+    else
+        return sum.pretty();
+}
+
 
 QPixmap FunctionListModel::getInclPixmap(TraceFunction *f) const
 {
@@ -449,21 +506,33 @@ bool FunctionListModel::FunctionLessThan::operator()(TraceFunction *left,
         SubCost sum2 = f2->inclusive()->subCost(_eventType);
         return sum1 < sum2;
     }
-
     case 1:
+    {
+        SubCost sum1 = f1->calledCount() != 0 ? f1->inclusive()->subCost(_eventType) / f1->calledCount() : 0;
+        SubCost sum2 = f2->calledCount() != 0 ? f2->inclusive()->subCost(_eventType) / f2->calledCount() : 0;
+        return sum1 < sum2;
+    }
+
+    case 2:
     {
         SubCost pure1 = f1->subCost(_eventType);
         SubCost pure2 = f2->subCost(_eventType);
         return pure1 < pure2;
     }
-
-    case 2:
-        return f1->calledCount() < f2->calledCount();
-
     case 3:
-        return f1->name() < f2->name();
+    {
+        SubCost pure1 = f1->calledCount() != 0 ? f1->subCost(_eventType) : 0;
+        SubCost pure2 = f2->calledCount() != 0 ? f2->subCost(_eventType) : 0;
+        return pure1 < pure2;
+    }
 
     case 4:
+        return f1->calledCount() < f2->calledCount();
+
+    case 5:
+        return f1->name() < f2->name();
+
+    case 6:
         return f1->object()->name() < f2->object()->name();
     }
 

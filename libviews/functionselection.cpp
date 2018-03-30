@@ -296,7 +296,7 @@ void FunctionSelection::functionContext(const QPoint & p)
             activateFunctionAction = popup.addAction(menuText);
             popup.addSeparator();
         }
-        if ((i.column() == 0) || (i.column() == 1)) {
+        if (i.column() <= 3) {
             addEventTypeMenu(&popup,false);
             popup.addSeparator();
         }
@@ -877,7 +877,10 @@ bool FunctionSelection::selectTopFunction()
 
 void FunctionSelection::setCostColumnWidths()
 {
-    functionList->resizeColumnToContents(1);
+    for (int i=0; i<=6; i++)
+    {
+        functionList->resizeColumnToContents(i);
+    }
 
     // hide call count column if all call counts given are zero
     if (_data->maxCallCount() > 0)
