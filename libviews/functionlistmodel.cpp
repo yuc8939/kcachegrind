@@ -521,8 +521,8 @@ bool FunctionListModel::FunctionLessThan::operator()(TraceFunction *left,
     }
     case 3:
     {
-        SubCost pure1 = f1->calledCount() != 0 ? f1->subCost(_eventType) : 0;
-        SubCost pure2 = f2->calledCount() != 0 ? f2->subCost(_eventType) : 0;
+        SubCost pure1 = f1->calledCount() != 0 ? f1->subCost(_eventType) / f1->calledCount() : 0;
+        SubCost pure2 = f2->calledCount() != 0 ? f2->subCost(_eventType) / f2->calledCount() : 0;
         return pure1 < pure2;
     }
 
